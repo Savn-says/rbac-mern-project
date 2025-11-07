@@ -100,7 +100,7 @@ Users (Admin)
 - Passwords hashed with bcryptjs
 - Refresh token rotation with jti; reuse detection revokes session
 
-## Deployment (Free Tier)
+## Deployment (Free Tier)-->(future improvements)
 - Database: MongoDB Atlas (M0)
 - API: Render Free Web Service (Node)
   - Env: `MONGODB_URI`, `JWT_SECRET`
