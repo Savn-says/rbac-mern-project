@@ -1,0 +1,40 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/rbac-db
+      - JWT_SECRET=your_super_secret_key_123
+    depends_on:
+      - mongo
+
+  seed:
+    build: ./backend
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/rbac-db
+      - JWT_SECRET=your_super_secret_key_123
+    depends_on:
+      - mongo
+    command: ["node", "seed.js"]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+      - seed
+
+volumes:
+  mongo-data:

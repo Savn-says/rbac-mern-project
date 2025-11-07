@@ -19,4 +19,8 @@ const postSchema = new mongoose.Schema({
   timestamps: true  // Auto-adds createdAt/updatedAt
 });
 
+// Indexes for query performance on scoped reads and sorting
+postSchema.index({ author: 1 });
+postSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Post', postSchema);

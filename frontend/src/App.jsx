@@ -4,6 +4,70 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 
+function AdminPanel({ setMessage }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = Cookies.get('token');
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { headers });
+      setUsers(res.data.users);
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Failed to load users.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchUsers();
+  }, [token]);
+
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`, { role: newRole }, { headers });
+      setMessage('Role updated!');
+      fetchUsers();
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Update failed.');
+    }
+  };
+
+  if (loading) return <div className="text-center py-5"><div className="spinner-border"></div></div>;
+
+  return (
+    <div className="container py-5">
+      <h2 className="mb-4">Admin Panel <span className="badge bg-danger">Admin Only</span></h2>
+      <div className="row g-4">
+        {users.map(user => (
+          <div key={user._id} className="col-md-6 col-lg-4">
+            <div className="card h-100 shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title">{user.username}</h5>
+                <p className="text-muted small">{user.email}</p>
+                <div className="d-flex align-items-center gap-2">
+                  <strong>Role:</strong>
+                  <select
+                    className="form-select form-select-sm"
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                  >
+                    <option value="Viewer">Viewer</option>
+                    <option value="Editor">Editor</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HomePage() {
   return (
     <div className="container py-5">
@@ -52,7 +116,7 @@ function LoginForm({ setRole, setUserId, setMessage }) {
     e.preventDefault();
     setMessage('Logging in...');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, { email, password });
       const { token, user } = response.data;
       Cookies.set('token', token, { secure: false, sameSite: 'strict' });
       setRole(user.role);
@@ -115,7 +179,7 @@ function PostsPage({ role, userId, setMessage }) {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/posts', { headers });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/posts`, { headers });
       setPosts(res.data.posts);
     } catch (err) {
       setMessage('Failed to load posts.');
@@ -145,10 +209,10 @@ function PostsPage({ role, userId, setMessage }) {
     e.preventDefault();
     try {
       if (editingPost) {
-        await axios.put(`http://localhost:5000/api/posts/${editingPost._id}`, formData, { headers });
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/posts/${editingPost._id}`, formData, { headers });
         setMessage('Post updated!');
       } else {
-        await axios.post('http://localhost:5000/api/posts', formData, { headers });
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, formData, { headers });
         setMessage('Post created!');
       }
       closeModal();
@@ -161,7 +225,7 @@ function PostsPage({ role, userId, setMessage }) {
   const handleDelete = async (postId) => {
     if (!window.confirm('Delete this post?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/posts/${postId}`, { headers });
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/posts/${postId}`, { headers });
       setMessage('Post deleted!');
       fetchPosts();
     } catch (err) {
@@ -296,6 +360,7 @@ function App() {
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/login" className="nav-link">Login</Link>
             <Link to="/posts" className="nav-link">Posts</Link>
+            {role === 'Admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
           </div>
           <div className="d-flex align-items-center">
             <span className="badge bg-dark me-3">Role: {role}</span>
@@ -318,6 +383,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginForm setRole={setRole} setUserId={setUserId} setMessage={setMessage} />} />
         <Route path="/posts" element={<PostsPage role={role} userId={userId} setMessage={setMessage} />} />
+        <Route path="/admin" element={<AdminPanel setMessage={setMessage} />} />
       </Routes>
     </Router>
   );

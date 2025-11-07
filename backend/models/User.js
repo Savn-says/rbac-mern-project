@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['Viewer', 'Editor', 'Admin'],  // Our RBAC roles
     default: 'Viewer'
+  },
+  refreshTokenJti: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true  // Auto-adds createdAt/updatedAt

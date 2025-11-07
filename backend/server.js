@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
@@ -14,8 +15,12 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware for security and JSON parsing
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Connect to MongoDB before routes
 mongoose.connect(process.env.MONGODB_URI)
@@ -24,6 +29,10 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Load auth routes
 app.use('/api/auth', authRoutes);
+
+//load users routes
+const usersRoutes = require('./routes/users');
+app.use('/api/users', usersRoutes);
 
 // Load posts routes
 const postsRoutes = require('./routes/posts');
